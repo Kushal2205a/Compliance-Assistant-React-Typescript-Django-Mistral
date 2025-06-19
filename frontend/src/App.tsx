@@ -1,6 +1,7 @@
 import React from 'react'
 import FileUploader from './components/FileUploader'
 import ChatBox from './components/ChatBox'
+import "tailwindcss";
 
 function App() {
 

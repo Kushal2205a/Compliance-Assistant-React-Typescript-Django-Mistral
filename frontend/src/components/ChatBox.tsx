@@ -1,4 +1,5 @@
 import React, { use, useState } from 'react';
+import "tailwindcss";
 
 interface ChatMessage {
     role: 'user' | 'assistant'

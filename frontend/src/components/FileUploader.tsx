@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-
+import "tailwindcss";
 const FileUploader: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);
     const handleUpload = async () => {
