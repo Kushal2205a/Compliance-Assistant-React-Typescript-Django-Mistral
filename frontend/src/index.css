@@ -2,3 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 @import "tailwindcss";
+
+html, body, #root { /* Assuming your React app mounts into <div id="root"></div> */
+  height: 100%;       /* Make html, body, and root div take full height */
+  margin: 0;         /* Remove default browser margins */
+  padding: 0;        /* Remove default browser padding */
+  overflow: hidden;  /* THIS IS KEY: Prevent scrolling on the html/body */
+}
