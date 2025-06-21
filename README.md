@@ -6,8 +6,8 @@
 ![FAISS](https://img.shields.io/badge/Semantic_Search-FAISS-orange)
 
 An AI-powered compliance assistant that answers questions from uploaded PDF documents using Mistral 7B and FAISS vector search.
+![image](https://github.com/user-attachments/assets/366f08c7-31db-4103-8cd9-7c49bc4699e8)
 
-![Demo Screenshot](https://via.placeholder.com/800x500?text=Compliance+QnA+Assistant+Demo)
 
 ## Features 
 
