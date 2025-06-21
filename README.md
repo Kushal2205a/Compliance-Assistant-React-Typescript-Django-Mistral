@@ -1,4 +1,4 @@
-# Compliance QnA Assistant 🏛️🔍
+# Compliance QnA Assistant 
 
 ![React](https://img.shields.io/badge/Frontend-React_TypeScript-61DAFB)
 ![Django](https://img.shields.io/badge/Backend-Django_REST-092E20)
@@ -37,7 +37,7 @@ An AI-powered compliance assistant that answers questions from uploaded PDF docu
 | **LLM**           | Mistral 7B via Ollama    |
 | **PDF Processing** | pdfplumber + spaCy       |
 
-## Installation 🚀
+## Installation 
 
 ### Backend Setup (Django)
 ```bash
