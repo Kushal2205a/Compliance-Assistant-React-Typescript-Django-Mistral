@@ -59,7 +59,7 @@ const ChatBox: React.FC = () => {
                 <h1 className="text-3xl font-medium">Compliance QnA Assistant</h1>
             </div>
 
-            {/* File Upload - Row 2 */}
+            {/* File Upload Container*/}
             <div className="relative w-full">
                 <input
                     type="file"
@@ -77,15 +77,15 @@ const ChatBox: React.FC = () => {
                 />
                 <label
                     htmlFor="pdf-upload"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-black text-white rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-gray-800"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-yellow-500 text-white rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-gray-800"
                     title="Upload PDF"
                 >
                     📎
                 </label>
             </div>
 
-            {/* Messages Container - Row 3 (flexible) */}
-            <div className="overflow-y-auto rounded-lg bg-gray-50">
+            {/* Messages Container*/}
+            <div className="overflow-y-auto rounded-lg ">
                 <div className="p-3 space-y-4">
                     {messages.map((msg, i) => (
                         <div
@@ -94,7 +94,7 @@ const ChatBox: React.FC = () => {
                         >
                             <span
                                 className={`inline-block p-2 rounded-lg max-w-[80%] ${msg.role === 'user'
-                                    ? 'bg-blue-500 text-white'
+                                    ? 'bg-yellow-500 text-white'
                                     : 'bg-gray-200 text-gray-800'
                                     }`}
                             >
@@ -106,7 +106,7 @@ const ChatBox: React.FC = () => {
                 </div>
             </div>
 
-            {/* Input Container - Row 4 (fixed at bottom) */}
+            {/* Input Container */}
             <div className="sticky bottom-0 bg-white py-3">
                 <div className="flex border rounded-lg p-2">
                     <input
@@ -123,7 +123,7 @@ const ChatBox: React.FC = () => {
                     />
                     <button
                         onClick={sendMessage}
-                        className="ml-2 bg-black text-white px-4 py-1 rounded text-sm"
+                        className="ml-2 bg-yellow-500 text-white px-4 py-1 rounded text-sm"
                     >
                         Ask
                     </button>
