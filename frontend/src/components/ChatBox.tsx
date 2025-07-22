@@ -10,6 +10,8 @@ const ChatBox: React.FC = () => {
     const [input, setInput] = useState('');
     const [file, setFile] = useState<File | null>(null);
     const [messages, setMessage] = useState<ChatMessage[]>([]);
+    const [progress, setProgress] = useState<string[]>([]);
+    const [loading, setLoading] = useState(false);
 
     const sendMessage = async () => {
         if (!input.trim()) return;
@@ -17,10 +19,15 @@ const ChatBox: React.FC = () => {
         const UserMessage: ChatMessage = { role: "user", content: input };
         setMessage((prev) => [...prev, UserMessage]);
         setInput('');
+        setProgress([]);
+        setLoading(true);
 
         const formData = new FormData();
         formData.append('query', input);
-        if (!file) return;
+        if (!file) {
+            setLoading(false);
+            return;
+        }
         formData.append('pdf', file);
 
         try {
@@ -34,6 +41,9 @@ const ChatBox: React.FC = () => {
 
             try {
                 const data = JSON.parse(text);
+                if (data.progress && Array.isArray(data.progress)) {
+                    setProgress(data.progress);
+                }
                 const assistantMessage: ChatMessage = {
                     role: "assistant",
                     content: data.answer || "No response received",
@@ -49,6 +59,8 @@ const ChatBox: React.FC = () => {
         } catch (err) {
             console.error('Failed to Fetch answer', err)
             setMessage((prev) => [...prev, { role: 'assistant', content: "Error Communiating with the server" }])
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -84,9 +96,19 @@ const ChatBox: React.FC = () => {
                 </label>
             </div>
 
-            {/* Messages Container*/}
-            <div className="overflow-y-auto rounded-lg ">
-                <div className="p-3 space-y-4">
+            {/* Progress and Messages Container*/}
+            <div className="overflow-y-auto rounded-lg min-h-0" style={{maxHeight: '100%'}}>
+                <div className="p-3 space-y-4 pb-28">
+                    {progress.length > 0 && (
+                        <div className="text-sm text-gray-500">
+                            <div className="mb-2 font-semibold">Processing steps:</div>
+                            <ul className="list-disc ml-6">
+                                {progress.map((step, idx) => (
+                                    <li key={idx}>{step}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                     {messages.map((msg, i) => (
                         <div
                             key={i}
@@ -107,8 +129,8 @@ const ChatBox: React.FC = () => {
             </div>
 
             {/* Input Container */}
-            <div className="sticky bottom-0 bg-white py-3">
-                <div className="flex border rounded-lg p-2">
+            <div className="sticky bottom-0 bg-white py-3 z-10">
+                <div className="flex border rounded-lg p-2 bg-white">
                     <input
                         className="flex-grow px-2 py-1 text-sm outline-none"
                         type="text"

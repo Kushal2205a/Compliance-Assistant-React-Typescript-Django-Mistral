@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response 
 from rest_framework.parsers import MultiPartParser, FormParser 
 from rest_framework import status 
-from .embeddings import extract_text_from_pdf, sliding_window_chunker, create_faiss_index, search_index
+from .embeddings import get_cached_chunks_and_index, search_index
 import ollama
 from datetime import date 
 
@@ -22,20 +22,14 @@ class viewQueryPDF(APIView):
             return Response({"error": "Missing query or PDF"}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-        
-            text_content = extract_text_from_pdf(pdf_file)
-            
-        
-            chunks = sliding_window_chunker(text_content)
-            
-            
-            index, _ = create_faiss_index(chunks)
+            progress_steps = []
+            def progress_callback(msg):
+                progress_steps.append(msg)
+            # Use file-based cache for chunks and index, with progress logging
+            chunks, index, _ = get_cached_chunks_and_index(pdf_file, progress_callback=progress_callback)
             top_chunks = search_index(index, query, chunks)
-            
-        
             context = "\n".join(top_chunks)
-            
-            
+            progress_callback("Preparing prompt for LLM...")
             prompt = f"""
                                 You are a compliance expert analyzing compliance documents. 
                                 Answer questions based ONLY on the provided context. 
@@ -55,10 +49,9 @@ class viewQueryPDF(APIView):
                                 [Answer]
                                 [Risk Level: High/Medium/Low]
                      """
-           
+            progress_callback("Querying LLM...")
             answer = query_mistral(prompt)
-
-            return Response({"answer": answer}, status=200)
-        
+            progress_callback("Done.")
+            return Response({"answer": answer, "progress": progress_steps}, status=200)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
