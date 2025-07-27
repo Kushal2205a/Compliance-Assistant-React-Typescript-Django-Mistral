@@ -36,30 +36,46 @@ const ChatBox: React.FC = () => {
                 body: formData,
             });
 
-            const text = await res.text();
-            console.log("🧾 Server response (raw):", text);
+            if (res.body) {
+                const reader = res.body.getReader();
+                let result = '';
+                setLoading(true);
 
-            try {
-                const data = JSON.parse(text);
-                if (data.progress && Array.isArray(data.progress)) {
-                    setProgress(data.progress);
+                // Add assistant message if not present
+                setMessage((prev) => {
+                    if (prev.length && prev[prev.length - 1].role === 'assistant') {
+                        return prev;
+                    } else {
+                        return [...prev, { role: 'assistant', content: '' }];
+                    }
+                });
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    result += new TextDecoder().decode(value);
+                    setMessage((prev) => {
+                        // Update last assistant message as it streams
+                        if (prev.length && prev[prev.length - 1].role === 'assistant') {
+                            const updated = [...prev];
+                            updated[updated.length - 1] = { role: 'assistant', content: result };
+                            return updated;
+                        } else {
+                            return [...prev, { role: 'assistant', content: result }];
+                        }
+                    });
                 }
-                const assistantMessage: ChatMessage = {
-                    role: "assistant",
-                    content: data.answer || "No response received",
-                };
-                setMessage((prev) => [...prev, assistantMessage]);
-            } catch (error) {
-                console.error("Failed to parse JSON:", error);
+                setLoading(false);
+            } else {
                 setMessage((prev) => [
                     ...prev,
-                    { role: "assistant", content: "⚠️ Error parsing response from server." },
+                    { role: "assistant", content: "⚠️ No response body from server." },
                 ]);
+                setLoading(false);
             }
         } catch (err) {
             console.error('Failed to Fetch answer', err)
             setMessage((prev) => [...prev, { role: 'assistant', content: "Error Communiating with the server" }])
-        } finally {
             setLoading(false);
         }
     };
