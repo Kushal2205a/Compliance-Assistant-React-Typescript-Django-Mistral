@@ -13,9 +13,9 @@ import pickle
 nlp = spacy.load("en_core_web_sm")
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
-# Directory for cache
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "cache")
 os.makedirs(CACHE_DIR, exist_ok=True)
+
 
 def file_hash(file) -> str:
     """Compute SHA256 hash of a file-like object (PDF)."""
@@ -56,7 +56,7 @@ def extract_text_from_pdf(file) -> str:
             text += page.extract_text() or ""
     return text
 
-def sliding_window_chunker(text: str, chunk_size: int = 150, overlap: int = 30):
+def sliding_window_chunker(text: str, chunk_size: int = 300, overlap: int = 50):
     words = text.split()
     chunks = []
 
@@ -112,7 +112,7 @@ def create_faiss_index(chunks: list[str]):
     index.add(embeddings)
     return index, embeddings
 
-# Main cache function
+
 def get_cached_chunks_and_index(file, progress_callback=None):
     """
     Returns (chunks, index, progress_steps) for a PDF file, using cache if available.
@@ -141,7 +141,9 @@ def get_cached_chunks_and_index(file, progress_callback=None):
         pickle.dump({"chunks": chunks, "index": index}, f)
     return chunks, index, ["Extracted text", "Chunked text", "Created embeddings and index", "Saved to cache"]
 
-def search_index(index, query: str, chunks: list[str], top_k=5):
+
+
+def search_index(index, query: str, chunks: list[str], top_k=3):
     query_embedding = model.encode(query)
     query_embedding = np.array(query_embedding).astype("float32").reshape(1, -1)
     faiss.normalize_L2(query_embedding)
