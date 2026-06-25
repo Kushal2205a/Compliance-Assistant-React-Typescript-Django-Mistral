@@ -2,9 +2,11 @@ from .review import (
     ChecklistResponse,
     ControlResponse,
     EvidenceDocumentResponse,
+    JobCreateResponse,
     ReviewCreate,
+    ReviewJobResponse,
     ReviewListResponse,
     ReviewResponse,
-    ReviewUpdate,
+    ReviewResultsResponse,
 )
 from .chat import ChatRequest
