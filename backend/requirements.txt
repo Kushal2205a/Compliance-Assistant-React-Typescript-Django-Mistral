@@ -8,3 +8,6 @@ spacy>=3.7
 ollama>=0.3
 numpy>=1.26
 python-dotenv>=1.0
+langgraph>=1.0
+langchain-core>=1.0
+requests>=2.0
