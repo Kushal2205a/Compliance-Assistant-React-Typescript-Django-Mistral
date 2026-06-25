@@ -84,3 +84,54 @@ class PipelineConfig:
     generation: GenerationConfig = field(default_factory=GenerationConfig)
     agent: AgentConfig = field(default_factory=AgentConfig)
     observability: ObservabilityConfig = field(default_factory=ObservabilityConfig)
+
+    @classmethod
+    def from_env(cls) -> "PipelineConfig":
+        import os
+
+        provider = os.getenv("LLM_PROVIDER", "ollama")
+        llm_model = os.getenv("LLM_MODEL")
+        if not llm_model:
+            llm_model = "mistral" if provider == "ollama" else "nvidia/nemotron-3-super-120b-a12b"
+        llm_base_url = os.getenv("LLM_BASE_URL") or None
+        nvidia_key = os.getenv("NVIDIA_API_KEY") or None
+
+        return cls(
+            llm=LLMConfig(
+                provider=provider,
+                model=llm_model,
+                temperature=float(os.getenv("LLM_TEMPERATURE", "0.0")),
+                base_url=llm_base_url,
+                api_key=nvidia_key if provider == "nvidia" else None,
+            ),
+            chunking=ChunkingConfig(
+                strategy=os.getenv("CHUNK_STRATEGY", "compliance"),
+                chunk_size=int(os.getenv("CHUNK_SIZE", "512")),
+                chunk_overlap=int(os.getenv("CHUNK_OVERLAP", "64")),
+            ),
+            embedding=EmbeddingConfig(
+                model_name=os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2"),
+            ),
+            indexing=IndexingConfig(
+                index_dir=os.getenv("INDEX_DIR", "index_cache"),
+            ),
+            routing=RoutingConfig(
+                enabled=os.getenv("ROUTING_ENABLED", "true").lower() == "true",
+            ),
+            retrieval=RetrievalConfig(
+                top_k=int(os.getenv("RETRIEVAL_TOP_K", "5")),
+                enable_hybrid=os.getenv("RETRIEVAL_HYBRID", "false").lower() == "true",
+                hybrid_alpha=float(os.getenv("RETRIEVAL_HYBRID_ALPHA", "0.7")),
+            ),
+            generation=GenerationConfig(
+                max_context_len=int(os.getenv("GENERATION_MAX_CONTEXT", "3000")),
+                max_tokens=int(os.getenv("GENERATION_MAX_TOKENS", "2048")),
+            ),
+            agent=AgentConfig(
+                max_retries=int(os.getenv("AGENT_MAX_RETRIES", "2")),
+                max_hops=int(os.getenv("AGENT_MAX_HOPS", "3")),
+            ),
+            observability=ObservabilityConfig(
+                enabled=os.getenv("OBSERVABILITY_ENABLED", "true").lower() == "true",
+            ),
+        )
