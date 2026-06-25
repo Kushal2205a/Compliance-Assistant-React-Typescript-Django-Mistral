@@ -32,3 +32,10 @@ Thumbs.db
 
 # Assets
 backend/assets/*.pdf
+
+# Storage (uploaded files)
+backend/storage/
+
+# Test databases
+backend/*_test*.db
+backend/*_migrate*.db
