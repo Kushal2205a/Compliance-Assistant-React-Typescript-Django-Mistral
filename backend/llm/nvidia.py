@@ -27,6 +27,7 @@ class NvidiaProvider:
             f"{self._base_url}/chat/completions",
             headers=self._headers,
             json=payload,
+            timeout=120,
         )
         resp.raise_for_status()
         return resp.json()
@@ -54,6 +55,7 @@ class NvidiaProvider:
             headers=self._headers,
             json=payload,
             stream=True,
+            timeout=120,
         )
         resp.raise_for_status()
         for line in resp.iter_lines():
