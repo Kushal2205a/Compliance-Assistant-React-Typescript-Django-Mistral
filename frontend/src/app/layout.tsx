@@ -1,20 +1,17 @@
 import type { Metadata } from "next";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Compliance QnA Assistant",
-  description: "AI-powered compliance assistant for SOC2 document analysis",
+  title: "Compliance Auditor",
+  description: "Evidence-based compliance review platform",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className="bg-white text-gray-900 font-sans antialiased">
-        {children}
+    <html lang="en" suppressHydrationWarning>
+      <body className="antialiased bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );
