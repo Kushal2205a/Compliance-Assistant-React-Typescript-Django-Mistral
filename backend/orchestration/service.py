@@ -32,13 +32,11 @@ class OrchestrationService:
         )
         self._retrieval_tool = RetrievalTool(self._retrieval_svc)
         self._router_llm: LLMProvider | None = self._build_llm(
-            config.routing.provider or config.llm.provider,
             config.routing.model or config.llm.model,
             config.llm.base_url,
             config.llm.api_key,
         )
         self._generation_llm: LLMProvider | None = self._build_llm(
-            config.generation.provider or config.llm.provider,
             config.generation.model or config.llm.model,
             config.llm.base_url,
             config.llm.api_key,
@@ -47,13 +45,12 @@ class OrchestrationService:
 
     def _build_llm(
         self,
-        provider: str | None,
         model: str | None,
         base_url: str | None,
         api_key: str | None,
     ) -> LLMProvider | None:
-        if provider and model:
-            return create_llm(provider, model, base_url, api_key)
+        if model:
+            return create_llm(model, base_url, api_key)
         return None
 
     def process_query(self, query: str, pdf_file, document_id: str | None = None) -> OrchestrationResult:

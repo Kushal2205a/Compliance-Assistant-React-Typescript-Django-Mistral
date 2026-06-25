@@ -26,8 +26,8 @@ class IndexingConfig:
 
 @dataclass
 class LLMConfig:
-    provider: Literal["ollama", "nvidia"] = "ollama"
-    model: str = "mistral"
+    provider: Literal["nvidia"] = "nvidia"
+    model: str = "nvidia/nemotron-3-super-120b-a12b"
     temperature: float = 0.0
     max_tokens: int = 1024
     base_url: str | None = None
@@ -89,20 +89,17 @@ class PipelineConfig:
     def from_env(cls) -> "PipelineConfig":
         import os
 
-        provider = os.getenv("LLM_PROVIDER", "ollama")
-        llm_model = os.getenv("LLM_MODEL")
-        if not llm_model:
-            llm_model = "mistral" if provider == "ollama" else "nvidia/nemotron-3-super-120b-a12b"
+        llm_model = os.getenv("LLM_MODEL", "nvidia/nemotron-3-super-120b-a12b")
         llm_base_url = os.getenv("LLM_BASE_URL") or None
         nvidia_key = os.getenv("NVIDIA_API_KEY") or None
 
         return cls(
             llm=LLMConfig(
-                provider=provider,
+                provider="nvidia",
                 model=llm_model,
                 temperature=float(os.getenv("LLM_TEMPERATURE", "0.0")),
                 base_url=llm_base_url,
-                api_key=nvidia_key if provider == "nvidia" else None,
+                api_key=nvidia_key,
             ),
             chunking=ChunkingConfig(
                 strategy=os.getenv("CHUNK_STRATEGY", "compliance"),
