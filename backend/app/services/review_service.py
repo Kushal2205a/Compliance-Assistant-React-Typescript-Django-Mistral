@@ -1,9 +1,48 @@
 import uuid
-from datetime import datetime
 
 from sqlalchemy.orm import Session, joinedload
 
-from app.models.review import ControlEvaluation, EvidenceDocument, Review
+from app.models.enums import JobStatus, ReviewStatus
+from app.models.review import Review
+
+
+def compute_orchestration_status(review: Review) -> str:
+    """Derive the frontend-facing orchestration state from review data.
+
+    States: waiting_for_evidence | indexing_documents | waiting_for_checklist
+            | evaluating | completed
+    """
+    evidence_docs = getattr(review, "evidence_documents", []) or []
+    jobs = getattr(review, "jobs", []) or []
+
+    # Check for completed/failed job first
+    completed_job = next(
+        (j for j in jobs if j.status in (JobStatus.COMPLETED.value, JobStatus.FAILED.value)),
+        None,
+    )
+    if completed_job:
+        return "completed"
+
+    # Check for running evaluation
+    running_job = next(
+        (j for j in jobs if j.status == JobStatus.RUNNING.value),
+        None,
+    )
+    if running_job:
+        return "evaluating"
+
+    # Evidence status
+    if not evidence_docs:
+        return "waiting_for_evidence"
+    if any(d.status != "indexed" for d in evidence_docs):
+        return "indexing_documents"
+
+    # Evidence all indexed — check for checklist
+    if not review.checklist:
+        return "waiting_for_checklist"
+
+    # Both ready but no running/completed job (worker may start imminently)
+    return "evaluating"
 
 
 class ReviewService:
@@ -15,7 +54,7 @@ class ReviewService:
             id=uuid.uuid4(),
             name=name,
             description=description,
-            status="draft",
+            status=ReviewStatus.DRAFT.value,
         )
         self.db.add(review)
         self.db.commit()
@@ -36,44 +75,32 @@ class ReviewService:
                 joinedload(Review.evidence_documents),
                 joinedload(Review.checklist),
                 joinedload(Review.evaluations),
+                joinedload(Review.jobs),
             )
             .filter(Review.id == review_id)
             .first()
         )
 
-    def update_status(self, review_id: uuid.UUID, status: str) -> Review | None:
-        review = self.db.query(Review).filter(Review.id == review_id).first()
-        if not review:
-            return None
-        review.status = status
-        review.updated_at = datetime.utcnow()
-        self.db.commit()
-        self.db.refresh(review)
-        return review
+    def transition_status(self, review_id: uuid.UUID, target: ReviewStatus) -> Review | None:
+        valid_transitions = {
+            ReviewStatus.DRAFT: [ReviewStatus.READY],
+            ReviewStatus.READY: [ReviewStatus.ARCHIVED],
+            ReviewStatus.ARCHIVED: [],
+        }
 
-    def update_summary(
-        self,
-        review_id: uuid.UUID,
-        total_controls: int | None = None,
-        evaluated_controls: int | None = None,
-        overall_percentage: float | None = None,
-        average_confidence: float | None = None,
-        processing_time: float | None = None,
-    ) -> Review | None:
         review = self.db.query(Review).filter(Review.id == review_id).first()
         if not review:
             return None
-        if total_controls is not None:
-            review.total_controls = total_controls
-        if evaluated_controls is not None:
-            review.evaluated_controls = evaluated_controls
-        if overall_percentage is not None:
-            review.overall_percentage = overall_percentage
-        if average_confidence is not None:
-            review.average_confidence = average_confidence
-        if processing_time is not None:
-            review.processing_time = processing_time
-        review.updated_at = datetime.utcnow()
+
+        current = ReviewStatus(review.status)
+        if current == target:
+            return review
+        if target not in valid_transitions.get(current, []):
+            raise ValueError(
+                f"Cannot transition from {current.value} to {target.value}"
+            )
+
+        review.status = target.value
         self.db.commit()
         self.db.refresh(review)
         return review

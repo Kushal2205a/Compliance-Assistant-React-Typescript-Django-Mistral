@@ -1,13 +1,13 @@
-import json as json
+import json
 import uuid
 from collections.abc import Generator
 
 from sqlalchemy.orm import Session
 
 from app.config.settings import settings
-from app.models.review import ControlEvaluation, Review
-from app.vectorstore.factory import create_vectorstore
-from app.vectorstore.base import ChunkData
+from app.models.enums import JobStatus
+from app.models.review import ControlEvaluation, Review, ReviewJob
+from app.services.retrieval_service import RetrievalService
 
 
 class ChatService:
@@ -21,19 +21,39 @@ class ChatService:
     ) -> Generator[str, None, None]:
         review = self.db.query(Review).filter(Review.id == review_id).first()
         if not review:
-            yield '{"error": "Review not found"}\n'
+            yield json.dumps({"error": "Review not found"}) + "\n"
             return
 
-        from rag.pipeline.embeddings.models import SentenceTransformerModel
+        latest_job = (
+            self.db.query(ReviewJob)
+            .filter(
+                ReviewJob.review_id == review_id,
+                ReviewJob.status == JobStatus.COMPLETED.value,
+            )
+            .order_by(ReviewJob.created_at.desc())
+            .first()
+        )
 
+        if not latest_job:
+            yield json.dumps({
+                "error": "chat_unavailable",
+                "message": "Complete an evaluation before asking follow-up questions.",
+            }) + "\n"
+            return
+
+        retrieval_svc = RetrievalService()
+        query_emb = None
+
+        from rag.pipeline.embeddings.models import SentenceTransformerModel
         embedder = SentenceTransformerModel(
             settings.embedding_model_name,
             settings.embedding_device,
         )
         query_emb = embedder.embed_query(question)
 
-        vs = create_vectorstore()
-        results = vs.search(query_emb, k=settings.retrieval_top_k)
+        vs = __import__("app.vectorstore.factory", fromlist=["get_vectorstore"])
+        vs_store = vs.get_vectorstore()
+        results = vs_store.search(query_emb, k=settings.retrieval_top_k)
 
         context_parts = []
         for r in results:
@@ -42,18 +62,19 @@ class ChatService:
 
         context = "\n\n".join(context_parts) if context_parts else ""
 
-        report_context = ""
         evaluations = (
             self.db.query(ControlEvaluation)
-            .filter(ControlEvaluation.review_id == review_id)
+            .filter(ControlEvaluation.job_id == latest_job.id)
             .order_by(ControlEvaluation.processing_order)
             .all()
         )
-        if evaluations:
-            report_lines = []
-            for ev in evaluations:
-                report_lines.append(f"- {ev.control_name}: {ev.status} (confidence: {ev.confidence:.2f})")
-            report_context = "\n".join(report_lines)
+        report_lines = []
+        for ev in evaluations:
+            report_lines.append(
+                f"- [{ev.control_id}] {ev.control_name}: {ev.status} "
+                f"(confidence: {ev.confidence:.2f})"
+            )
+        report_context = "\n".join(report_lines)
 
         from llm.factory import create_llm
 
@@ -67,7 +88,7 @@ class ChatService:
 
 Review: {review.name}
 
-Evaluation Summary:
+Evaluation Summary (Job {latest_job.id}):
 {report_context}
 
 Relevant Evidence:
@@ -84,6 +105,6 @@ Answer the user's question based on the evidence and evaluation results above.""
             max_tokens=settings.generation_max_tokens,
         ):
             if token:
-                yield f'{{"token": {json.dumps(token)}}}\n'
+                yield json.dumps({"token": token}) + "\n"
 
-        yield '{"done": true}\n'
+        yield json.dumps({"done": True}) + "\n"
