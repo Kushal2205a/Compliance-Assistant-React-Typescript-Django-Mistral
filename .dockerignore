@@ -1,0 +1,36 @@
+# Python
+**/venv/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/.pytest_cache/
+
+# Node
+**/node_modules/
+**/.next/
+
+# Index
+**/index_cache/
+**/rag/cache/
+
+# Environment
+**/.env
+**/.env.local
+
+# IDE
+**/.vscode/
+**/.idea/
+
+# OS
+**/.DS_Store
+**/Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Logs
+**/*.log
+
+# Assets (PDF samples too large)
+**/*.pdf
