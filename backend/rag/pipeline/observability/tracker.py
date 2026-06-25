@@ -26,6 +26,20 @@ class ExecutionTrace:
     generation_latency: float = 0.0
     steps: list[TraceStep] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
+    _step_start: float = 0.0
+
+    def begin_step(self, name: str, **meta: Any) -> None:
+        import time
+        self._step_start = time.time()
+        self.steps.append(
+            TraceStep(step=name, metadata=meta, input=meta.get("input"))
+        )
+
+    def end_step(self, output: Any = None) -> None:
+        import time
+        if self.steps:
+            self.steps[-1].latency = time.time() - self._step_start
+            self.steps[-1].output = output
 
     def record_tool_call(self, tool: str, query: str, doc_count: int, latency: float) -> None:
         self.tool_calls.append(
