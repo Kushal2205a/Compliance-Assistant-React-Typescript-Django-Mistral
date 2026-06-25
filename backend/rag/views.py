@@ -7,33 +7,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from orchestration.service import OrchestrationService
-from rag.pipeline.config import (
-    AgentConfig,
-    ChunkingConfig,
-    EmbeddingConfig,
-    GenerationConfig,
-    IndexingConfig,
-    LLMConfig,
-    ObservabilityConfig,
-    PipelineConfig,
-    RetrievalConfig,
-    RoutingConfig,
-)
+from rag.pipeline.config import PipelineConfig
 
 logger = logging.getLogger(__name__)
 
-config = PipelineConfig(
-    llm=LLMConfig(provider="ollama", model="mistral"),
-    chunking=ChunkingConfig(strategy="compliance"),
-    embedding=EmbeddingConfig(model_name="all-MiniLM-L6-v2"),
-    indexing=IndexingConfig(index_dir="index_cache"),
-    routing=RoutingConfig(enabled=True),
-    retrieval=RetrievalConfig(top_k=5, enable_hybrid=False),
-    generation=GenerationConfig(max_context_len=3000),
-    agent=AgentConfig(max_retries=2, max_hops=3),
-    observability=ObservabilityConfig(enabled=True),
-)
-
+config = PipelineConfig.from_env()
 orchestration = OrchestrationService(config)
 
 
