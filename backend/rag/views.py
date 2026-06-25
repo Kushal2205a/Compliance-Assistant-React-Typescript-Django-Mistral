@@ -1,6 +1,7 @@
 import json
 import logging
 
+from django.http import StreamingHttpResponse
 from rest_framework import status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
@@ -40,6 +41,25 @@ class viewQueryPDF(APIView):
             return Response(response_data, status=500)
 
         return Response(response_data)
+
+
+
+class viewQueryPDFStream(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        query = request.data.get("query")
+        pdf_file = request.data.get("pdf")
+
+        if not query or not pdf_file:
+            return Response(
+                {"error": "Missing query or PDF"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        def event_stream():
+            yield from orchestration.process_query_stream(query, pdf_file)
+
+        return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
 
 
 test_queries = [

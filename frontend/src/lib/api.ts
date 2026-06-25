@@ -12,7 +12,7 @@ export async function queryDocument(
   formData.append("pdf", pdf);
 
   try {
-    const res = await fetch(`${API_BASE}/query/`, {
+    const res = await fetch(`${API_BASE}/query/stream/`, {
       method: "POST",
       body: formData,
     });
@@ -32,10 +32,43 @@ export async function queryDocument(
     }
 
     const decoder = new TextDecoder();
+    let buffer = "";
+
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      onChunk(decoder.decode(value, { stream: true }));
+
+      buffer += decoder.decode(value, { stream: true });
+
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith("data: ")) continue;
+
+        const jsonStr = trimmed.slice(6);
+        try {
+          const data = JSON.parse(jsonStr);
+
+          if (data.error) {
+            onError(data.error);
+            onDone();
+            return;
+          }
+
+          if (data.token) {
+            onChunk(data.token);
+          }
+
+          if (data.done) {
+            onDone();
+            return;
+          }
+        } catch {
+          // skip malformed JSON events
+        }
+      }
     }
     onDone();
   } catch (err) {

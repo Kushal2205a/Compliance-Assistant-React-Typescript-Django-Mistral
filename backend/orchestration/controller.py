@@ -51,4 +51,34 @@ def build_graph() -> StateGraph:
     return graph.compile()
 
 
+def build_streaming_graph() -> StateGraph:
+    graph = StateGraph(AgentState)
+
+    graph.add_node("analyze", analyze_query)
+    graph.add_node("transform", transform_query)
+    graph.add_node("retrieve", retrieve_documents)
+    graph.add_node("evaluate", evaluate_context)
+    graph.add_node("assemble", assemble_context)
+
+    graph.set_entry_point("analyze")
+
+    graph.add_edge("analyze", "transform")
+    graph.add_edge("transform", "retrieve")
+    graph.add_edge("retrieve", "evaluate")
+
+    graph.add_conditional_edges(
+        "evaluate",
+        should_continue,
+        {
+            "assemble": "assemble",
+            "reformulate": "retrieve",
+        },
+    )
+
+    graph.add_edge("assemble", END)
+
+    return graph.compile()
+
+
 default_graph = build_graph()
+streaming_graph = build_streaming_graph()
