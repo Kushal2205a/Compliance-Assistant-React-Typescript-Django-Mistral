@@ -27,6 +27,17 @@ class ExecutionTrace:
     steps: list[TraceStep] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
 
+    def record_tool_call(self, tool: str, query: str, doc_count: int, latency: float) -> None:
+        self.tool_calls.append(
+            {"tool": tool, "query": query, "doc_count": doc_count, "latency_s": round(latency, 3)}
+        )
+
+    def record_retrieval(self, chunks: list) -> None:
+        for c in chunks:
+            self.retrieved_docs.append(
+                {"id": c.id, "doc_id": c.document_id, "preview": c.content[:120]}
+            )
+
     def to_dict(self) -> dict:
         return {
             "query": self.query,
