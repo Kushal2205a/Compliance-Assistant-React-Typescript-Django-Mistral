@@ -5,6 +5,7 @@ backend/__pycache__/
 backend/**/__pycache__/
 backend/*.pyc
 backend/db.sqlite3
+backend/*.db
 backend/index_cache/
 backend/rag/cache/
 backend/.env
