@@ -67,12 +67,50 @@ class QdrantVectorStore(VectorStore):
             results.append(SearchResult(chunk=chunk, score=hit.score))
         return results
 
+    def get_chunks_by_ids(self, chunk_ids: list[str]) -> list[ChunkData]:
+        if not chunk_ids:
+            return []
+        try:
+            points = self._client.retrieve(
+                collection_name=self._collection,
+                ids=chunk_ids,
+            )
+        except Exception:
+            return []
+        chunks = []
+        for point in points:
+            payload = point.payload or {}
+            chunks.append(
+                ChunkData(
+                    id=point.id,
+                    document_id=payload.get("document_id", ""),
+                    content=payload.get("content", ""),
+                    metadata={k: v for k, v in payload.items() if k not in ("document_id", "content")},
+                )
+            )
+        return chunks
+
     def delete(self, chunk_ids: list[str]) -> None:
         if not chunk_ids:
             return
         self._client.delete(
             collection_name=self._collection,
             points_selector=qmodels.PointIdsList(points=chunk_ids),
+        )
+
+    def delete_by_document(self, document_id: str) -> None:
+        self._client.delete(
+            collection_name=self._collection,
+            points_selector=qmodels.FilterSelector(
+                filter=qmodels.Filter(
+                    must=[
+                        qmodels.FieldCondition(
+                            key="document_id",
+                            match=qmodels.MatchValue(value=document_id),
+                        )
+                    ]
+                )
+            ),
         )
 
     def count(self) -> int:

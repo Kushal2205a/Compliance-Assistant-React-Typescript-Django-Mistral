@@ -18,19 +18,36 @@ class InMemoryVectorStore(VectorStore):
     def search(self, query_embedding: np.ndarray, k: int) -> list[SearchResult]:
         if not self._embeddings:
             return []
+        q = query_embedding.flatten()
+        if q.ndim != 1 or q.shape[0] == 0:
+            return []
         scores = []
         for emb in self._embeddings:
-            score = float(np.dot(query_embedding, emb))
+            e = emb.flatten()
+            if e.ndim != 1 or e.shape != q.shape:
+                continue
+            score = float(np.dot(q, e))
             scores.append(score)
+        if not scores:
+            return []
         indices = np.argsort(scores)[::-1][:k]
         results = []
         for idx in indices:
             results.append(SearchResult(chunk=self._chunks[idx], score=scores[idx]))
         return results
 
+    def get_chunks_by_ids(self, chunk_ids: list[str]) -> list[ChunkData]:
+        id_set = set(chunk_ids)
+        return [c for c in self._chunks if c.id in id_set]
+
     def delete(self, chunk_ids: list[str]) -> None:
         ids_set = set(chunk_ids)
         remaining = [(c, e) for c, e in zip(self._chunks, self._embeddings) if c.id not in ids_set]
+        self._chunks = [c for c, _ in remaining]
+        self._embeddings = [e for _, e in remaining]
+
+    def delete_by_document(self, document_id: str) -> None:
+        remaining = [(c, e) for c, e in zip(self._chunks, self._embeddings) if c.document_id != document_id]
         self._chunks = [c for c, _ in remaining]
         self._embeddings = [e for _, e in remaining]
 

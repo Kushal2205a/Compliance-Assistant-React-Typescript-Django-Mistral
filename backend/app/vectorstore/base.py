@@ -45,3 +45,11 @@ class VectorStore(ABC):
     @abstractmethod
     def clear(self) -> None:
         pass
+
+    def get_chunks_by_ids(self, chunk_ids: list[str]) -> list[ChunkData]:
+        """Fetch specific chunks by their IDs (for context expansion)."""
+        return []
+
+    def delete_by_document(self, document_id: str) -> None:
+        """Delete all chunks belonging to a document."""
+        pass
