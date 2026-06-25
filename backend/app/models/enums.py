@@ -26,6 +26,10 @@ class ControlStatus(str, Enum):
 class EventType(str, Enum):
     INDEXING_STARTED = "indexing_started"
     INDEXING_COMPLETED = "indexing_completed"
+    GROUP_STARTED = "group_started"
+    GROUP_COMPLETED = "group_completed"
+    GROUP_EVALUATION_STARTED = "group_evaluation_started"
+    GROUP_EVALUATION_COMPLETED = "group_evaluation_completed"
     CONTROL_STARTED = "control_started"
     RETRIEVAL_STARTED = "retrieval_started"
     RETRIEVAL_COMPLETED = "retrieval_completed"

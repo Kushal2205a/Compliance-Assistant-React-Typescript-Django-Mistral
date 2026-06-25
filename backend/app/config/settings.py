@@ -60,6 +60,10 @@ class Settings(BaseSettings):
 
     observability_enabled: bool = True
 
+    evaluation_mode: str = "domain"
+    batch_size: int = 5
+    control_groups_path: str = "config/groups_default.json"
+
     model_config = {"env_prefix": "", "case_sensitive": False, "env_file": ".env"}
 
 
