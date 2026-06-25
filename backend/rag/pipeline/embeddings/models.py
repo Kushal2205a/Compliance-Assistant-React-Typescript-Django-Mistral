@@ -15,7 +15,7 @@ class SentenceTransformerModel(EmbeddingModel):
 
     def embed_query(self, text: str) -> np.ndarray:
         embedding = self._model.encode(text, show_progress_bar=False)
-        return np.array(embedding, dtype="float32").reshape(1, -1)
+        return np.array(embedding, dtype="float32").flatten()
 
     @property
     def dimensions(self) -> int:

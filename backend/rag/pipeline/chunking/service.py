@@ -2,6 +2,7 @@ from ..config import ChunkingConfig
 from . import Chunk
 from .strategies import (
     compliance_chunker,
+    document_aware_chunker,
     hierarchical_chunker,
     recursive_chunker,
     semantic_chunker,
@@ -13,20 +14,31 @@ class ChunkingService:
     def __init__(self, config: ChunkingConfig):
         self.config = config
 
-    def chunk(self, text: str, document_id: str) -> list[Chunk]:
+    def chunk(self, text: str, document_id: str, page_map: dict[int, int] | None = None) -> list[Chunk]:
         strategy = self.config.strategy
-        if strategy == "recursive":
-            return recursive_chunker(
+        print(f"[chunker] strategy={strategy}, text_len={len(text)}, page_map={len(page_map) if page_map else 0} pages")
+        if strategy == "document_aware":
+            result = document_aware_chunker(
+                text,
+                document_id,
+                chunk_size=self.config.chunk_size,
+                overlap=self.config.chunk_overlap,
+                page_map=page_map,
+            )
+        elif strategy == "recursive":
+            result = recursive_chunker(
                 text, document_id, self.config.chunk_size, self.config.chunk_overlap
             )
         elif strategy == "sentence":
-            return sentence_chunker(text, document_id, self.config.chunk_size)
+            result = sentence_chunker(text, document_id, self.config.chunk_size)
         elif strategy == "compliance":
-            return compliance_chunker(text, document_id)
+            result = compliance_chunker(text, document_id)
         else:
-            return recursive_chunker(
+            result = recursive_chunker(
                 text, document_id, self.config.chunk_size, self.config.chunk_overlap
             )
+        print(f"[chunker] created {len(result)} chunks")
+        return result
 
     def chunk_semantic(
         self, text: str, document_id: str, embed_fn

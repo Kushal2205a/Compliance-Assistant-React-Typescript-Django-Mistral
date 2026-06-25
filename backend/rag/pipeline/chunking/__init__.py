@@ -14,3 +14,13 @@ class Chunk:
 class HierarchicalChunk(Chunk):
     parent_id: str | None = None
     children: list["HierarchicalChunk"] = field(default_factory=list)
+
+
+INDEXING_VERSION = 2
+"""Bump when chunking strategy changes to invalidate old indexes."""
+
+
+def make_chunk_id() -> str:
+    import uuid
+    return uuid.uuid4().hex[:12]
+
