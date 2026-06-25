@@ -13,6 +13,31 @@ from app.vectorstore.factory import create_vectorstore
 logger = logging.getLogger(__name__)
 
 
+def _preload_reranker():
+    """Load the reranker model synchronously at import time,
+    before any asyncio event loop exists.
+
+    The transformers/AutoModel libraries deadlock when loaded inside
+    FastAPI's lifespan or ThreadPoolExecutor. Loading at module level
+    avoids that entirely.
+    """
+    if not settings.reranker_enabled:
+        return
+    try:
+        from app.services.reranker_service import get_reranker
+        r = get_reranker()
+        logger.info("Loading reranker at import time...")
+        r._load()
+        logger.info("Reranker loaded at import time")
+    except Exception as e:
+        logger.error("Failed to load reranker at import time: %s", e)
+        logger.warning("Disabling reranker for this session")
+        settings.reranker_enabled = False
+
+
+_preload_reranker()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
