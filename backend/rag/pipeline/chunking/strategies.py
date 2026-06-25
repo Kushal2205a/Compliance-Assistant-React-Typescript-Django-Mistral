@@ -62,6 +62,8 @@ def compliance_chunker(
     max_sentence_chars: int = 1000,
 ) -> list[Chunk]:
     sections = _extract_sections(text)
+    if not sections:
+        sections = [text]
     chunks: list[Chunk] = []
     for sec_idx, section in enumerate(sections):
         if len(section) <= max_section_chars:

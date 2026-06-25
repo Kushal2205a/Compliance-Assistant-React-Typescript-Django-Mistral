@@ -16,9 +16,13 @@ class FaissVectorStore(VectorStore):
         self.id_map: dict[str, int] = {}
 
     def add(self, chunks: list[Chunk], embeddings: np.ndarray) -> None:
+        if len(chunks) == 0:
+            return
         if embeddings.shape[0] != len(chunks):
             raise ValueError("Embedding count must match chunk count")
         embeddings = embeddings.astype("float32")
+        if embeddings.ndim == 1:
+            embeddings = embeddings.reshape(1, -1)
         faiss.normalize_L2(embeddings)
         start = self.index.ntotal
         self.index.add(embeddings)
@@ -49,6 +53,8 @@ class FaissVectorStore(VectorStore):
         kept_embeddings = self.index.reconstruct_n(0, self.index.ntotal)[keep_mask]
         self.index.reset()
         if kept_embeddings.shape[0] > 0:
+            if kept_embeddings.ndim == 1:
+                kept_embeddings = kept_embeddings.reshape(1, -1)
             faiss.normalize_L2(kept_embeddings)
             self.index.add(kept_embeddings)
         self.chunks = [c for i, c in enumerate(self.chunks) if keep_mask[i]]
